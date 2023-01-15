@@ -3,6 +3,14 @@ import argparse
 import torch
 from tqdm import tqdm
 
+
+def save_model(theta_0, output_file):
+    torch.save({"state_dict": theta_0}, output_file)
+    print("Saving...")
+    print("Done!")
+    print(torch.cuda.memory_allocated())
+
+
 parser = argparse.ArgumentParser(description="Merge two models")
 parser.add_argument("model_0", type=str, help="Path to model 0")
 parser.add_argument("model_1", type=str, help="Path to model 1")
@@ -60,9 +68,4 @@ for key in tqdm(theta_1.keys(), desc="Stage 2/2"):
     if "model" in key and key not in theta_0:
         theta_0[key] = theta_1[key]
 
-print("Saving...")
-
-torch.save({"state_dict": theta_0}, output_file)
-
-print("Done!")
-print(torch.cuda.memory_allocated())
+save_model(theta_0, output_file)
