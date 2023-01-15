@@ -16,14 +16,14 @@ def prune_it(checkpoint_path):
     size_initial = os.path.getsize(checkpoint_path)
     checkpoint = torch.load(checkpoint_path, map_location=device)
     pruned = prune_checkpoint(checkpoint)
-    fn = f"{os.path.splitext(checkpoint_path)[0]}-pruned.ckpt"
+    base_file = os.path.basename(checkpoint_path)
+    base_file_name, _ = os.path.splitext(base_file)
+    fn = f"{base_file_name}-pruned.ckpt"
     print(f"Saving pruned checkpoint at: {fn}")
     torch.save(pruned, fn)
     newsize = os.path.getsize(fn)
-    MSG = f"New ckpt size: {newsize * 1e-9:.2f} GB. " + \
-          f"Saved {(size_initial - newsize) * 1e-9:.2f} GB by removing optimizer states"
+    MSG = f"New ckpt size: {newsize*1e-9:.2f} GB. " + \
+          f"Saved {(size_initial - newsize)*1e-9:.2f} GB by removing optimizer states"
     print(MSG)
 
-
-if __name__ == "__main__":
-    prune_it(ckpt)
+prune_it(ckpt)
