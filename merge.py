@@ -16,8 +16,16 @@ args = parser.parse_args()
 device = args.device
 model_0 = torch.load(args.model_0, map_location=device)
 model_1 = torch.load(args.model_1, map_location=device)
-theta_0 = model_0["state_dict"]
-theta_1 = model_1["state_dict"]
+try:
+    theta_0 = model_0["state_dict"]
+except KeyError:
+    print("Model 0 does not have a state_dict key, assuming it is a state_dict")
+    theta_0 = model_0
+try:
+    theta_1 = model_1["state_dict"]
+except KeyError:
+    print("Model 1 does not have a state_dict key, assuming it is a state_dict")
+    theta_1 = model_1
 alpha = args.alpha
 
 output_file = f'{args.output}-{str(alpha)[2:] + "0"}.ckpt'
@@ -35,17 +43,20 @@ if os.path.isfile(output_file):
         else:
             print("Please enter y or n")
 
-
 for key in tqdm(theta_0.keys(), desc="Stage 1/2"):
+    # clear the GPU memory
+    torch.cuda.empty_cache()
     # skip VAE model parameters to get better results(tested for anime models)
     # for anime model，with merging VAE model, the result will be worse (dark and blurry)
     if args.without_vae and "first_stage_model" in key:
         continue
-        
+
     if "model" in key and key in theta_1:
         theta_0[key] = (1 - alpha) * theta_0[key] + alpha * theta_1[key]
 
 for key in tqdm(theta_1.keys(), desc="Stage 2/2"):
+    # clear the GPU memory
+    torch.cuda.empty_cache()
     if "model" in key and key not in theta_0:
         theta_0[key] = theta_1[key]
 
@@ -54,3 +65,4 @@ print("Saving...")
 torch.save({"state_dict": theta_0}, output_file)
 
 print("Done!")
+print(torch.cuda.memory_allocated())
